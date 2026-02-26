@@ -250,7 +250,10 @@ public class WebSocketClient extends WebSocketAdapter implements WebSocketListen
 
         // Allows 115 messages to be sent before limiting.
         if (this.messagesSent.get() <= 115 || (skipQueue && this.messagesSent.get() <= 119)) {
-            LOG.trace("<- {}", message);
+            if (LOG.isTraceEnabled()) {
+                String redactedMessage = message.toString().replace(getToken(), "<REDACTED>");
+                LOG.trace("<- {}", redactedMessage);
+            }
             if (encoding == GatewayEncoding.ETF) {
                 socket.sendBinary(message.toETF());
             } else {
@@ -1141,6 +1144,7 @@ public class WebSocketClient extends WebSocketAdapter implements WebSocketListen
                 () -> updateAudioConnection0(guildId, connectedChannel));
     }
 
+    @SuppressWarnings("fallthrough")
     public ConnectionRequest updateAudioConnection0(long guildId, AudioChannel connectedChannel) {
         // Called by VoiceStateUpdateHandler when we receive a response from discord
         // about our request to CONNECT or DISCONNECT.

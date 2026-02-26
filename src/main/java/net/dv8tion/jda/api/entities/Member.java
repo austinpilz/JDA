@@ -17,6 +17,7 @@
 package net.dv8tion.jda.api.entities;
 
 import net.dv8tion.jda.annotations.Incubating;
+import net.dv8tion.jda.annotations.ReplaceWith;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.Permission;
@@ -26,6 +27,8 @@ import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.requests.Route;
 import net.dv8tion.jda.api.requests.restaction.AuditableRestAction;
+import net.dv8tion.jda.api.utils.DiscordAssets;
+import net.dv8tion.jda.api.utils.ImageFormat;
 import net.dv8tion.jda.api.utils.ImageProxy;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import net.dv8tion.jda.internal.requests.restaction.AuditableRestActionImpl;
@@ -64,7 +67,12 @@ import javax.annotation.Nullable;
  * @see   Guild#getMembers()
  */
 public interface Member extends IMentionable, IPermissionHolder, IDetachableEntity, UserSnowflake {
-    /** Template for {@link #getAvatarUrl()}. */
+    /**
+     * Template for {@link #getAvatarUrl()}.
+     *
+     * @deprecated Replaced by {@link DiscordAssets#memberAvatar(ImageFormat, String, String, String)}
+     */
+    @Deprecated
     String AVATAR_URL = "https://cdn.discordapp.com/guilds/%s/users/%s/avatars/%s.%s";
     /** Maximum number of days a Member can be timed out for */
     int MAX_TIME_OUT_LENGTH = 28;
@@ -284,10 +292,27 @@ public interface Member extends IMentionable, IPermissionHolder, IDetachableEnti
     @Nullable
     default String getAvatarUrl() {
         String avatarId = getAvatarId();
-        return avatarId == null
-                ? null
-                : String.format(
-                        AVATAR_URL, getGuild().getId(), getId(), avatarId, avatarId.startsWith("a_") ? "gif" : "png");
+        return avatarId == null ? null : getAvatarUrl(avatarId.startsWith("a_") ? ImageFormat.GIF : ImageFormat.PNG);
+    }
+
+    /**
+     * The URL for the member's per guild avatar image.
+     * If the member has not set a per guild avatar, this will return null.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     *
+     * @return Possibly-null String containing the {@link net.dv8tion.jda.api.entities.Member} per guild avatar url.
+     *
+     * @see    DiscordAssets#memberAvatar(ImageFormat, String, String, String)
+     */
+    @Nullable
+    default String getAvatarUrl(@Nonnull ImageFormat format) {
+        ImageProxy proxy = getAvatar(format);
+        return proxy == null ? null : proxy.getUrl();
     }
 
     /**
@@ -304,6 +329,25 @@ public interface Member extends IMentionable, IPermissionHolder, IDetachableEnti
     }
 
     /**
+     * Returns an {@link ImageProxy} for this member's avatar.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     *
+     * @return Possibly-null {@link ImageProxy} of this member's avatar
+     *
+     * @see    #getAvatarUrl(ImageFormat)
+     * @see    DiscordAssets#memberAvatar(ImageFormat, String, String, String)
+     */
+    @Nullable
+    default ImageProxy getAvatar(@Nonnull ImageFormat format) {
+        return DiscordAssets.memberAvatar(format, getGuild().getId(), getId(), getAvatarId());
+    }
+
+    /**
      * The URL for the member's effective avatar image.
      * If they do not have a per guild avatar set, this will return the URL of
      * their effective {@link User} avatar.
@@ -317,6 +361,28 @@ public interface Member extends IMentionable, IPermissionHolder, IDetachableEnti
     }
 
     /**
+     * The URL for the member's effective avatar image.
+     * If they do not have a per guild avatar set, this will return the URL of
+     * their effective {@link User} avatar.
+     *
+     * <p>The return image's format may be forced to {@link ImageFormat#PNG PNG}
+     * if the user does not have an avatar.
+     *
+     * @param  preferredFormat
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     *
+     * @return Never-null String containing the {@link net.dv8tion.jda.api.entities.Member} avatar url.
+     */
+    @Nonnull
+    default String getEffectiveAvatarUrl(@Nonnull ImageFormat preferredFormat) {
+        String avatarUrl = getAvatarUrl(preferredFormat);
+        return avatarUrl == null ? getUser().getEffectiveAvatarUrl(preferredFormat) : avatarUrl;
+    }
+
+    /**
      * Returns an {@link ImageProxy} for this member's effective avatar image.
      *
      * @return Never-null {@link ImageProxy} of this member's effective avatar image
@@ -327,6 +393,28 @@ public interface Member extends IMentionable, IPermissionHolder, IDetachableEnti
     default ImageProxy getEffectiveAvatar() {
         ImageProxy avatar = getAvatar();
         return avatar == null ? getUser().getEffectiveAvatar() : avatar;
+    }
+
+    /**
+     * Returns an {@link ImageProxy} for this member's effective avatar image.
+     *
+     * <p>The return image's format may be forced to {@link ImageFormat#PNG PNG}
+     * if the user does not have an avatar.
+     *
+     * @param  preferredFormat
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     *
+     * @return Never-null {@link ImageProxy} of this member's effective avatar image
+     *
+     * @see    #getEffectiveAvatarUrl(ImageFormat)
+     */
+    @Nonnull
+    default ImageProxy getEffectiveAvatar(@Nonnull ImageFormat preferredFormat) {
+        ImageProxy avatar = getAvatar(preferredFormat);
+        return avatar == null ? getUser().getEffectiveAvatar(preferredFormat) : avatar;
     }
 
     /**
@@ -379,6 +467,16 @@ public interface Member extends IMentionable, IPermissionHolder, IDetachableEnti
     Set<Role> getUnsortedRoles();
 
     /**
+     * The {@link RoleColors} of this Member's name in a Guild.
+     *
+     * <p>This is determined by the colors of the highest role assigned to them that does not have the default colors.
+     *
+     * @return The display colors for this Member.
+     */
+    @Nonnull
+    RoleColors getColors();
+
+    /**
      * The {@link java.awt.Color Color} of this Member's name in a Guild.
      *
      * <p>This is determined by the color of the highest role assigned to them that does not have the default color.
@@ -386,10 +484,16 @@ public interface Member extends IMentionable, IPermissionHolder, IDetachableEnti
      *
      * @return The display Color for this Member.
      *
+     * @deprecated Replaced by {@code getColors().getPrimary()}
+     *
      * @see    #getColorRaw()
      */
     @Nullable
-    Color getColor();
+    @Deprecated
+    @ReplaceWith("getColors().getPrimary()")
+    default Color getColor() {
+        return this.getColors().getPrimary();
+    }
 
     /**
      * The raw RGB value for the color of this member.
@@ -397,8 +501,14 @@ public interface Member extends IMentionable, IPermissionHolder, IDetachableEnti
      * if this member uses the default color (special property, it changes depending on theme used in the client)
      *
      * @return The raw RGB value or the role default
+     *
+     * @deprecated Replaced by {@code getColors().getPrimaryRaw()}
      */
-    int getColorRaw();
+    @Deprecated
+    @ReplaceWith("getColors().getPrimaryRaw()")
+    default int getColorRaw() {
+        return this.getColors().getPrimaryRaw();
+    }
 
     /**
      * The raw {@link MemberFlag flags} bitset for this member.

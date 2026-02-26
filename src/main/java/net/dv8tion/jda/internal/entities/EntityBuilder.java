@@ -173,6 +173,15 @@ public class EntityBuilder extends AbstractEntityBuilder {
         }
     }
 
+    public static SKU createSKU(DataObject object) {
+        return new SKUImpl(
+                object.getLong("id"),
+                SKUType.fromId(object.getInt("type")),
+                object.getString("name"),
+                object.getString("slug"),
+                SKUFlag.getFlags(object.getInt("flags")));
+    }
+
     private void createGuildEmojiPass(GuildImpl guildObj, DataArray array) {
         if (!getJDA().isCacheFlagSet(CacheFlag.EMOJI)) {
             return;
@@ -1034,7 +1043,7 @@ public class EntityBuilder extends AbstractEntityBuilder {
                 .setInterestedUserCount(json.getInt("user_count", -1))
                 .setStartTime(json.getOffsetDateTime("scheduled_start_time"))
                 .setEndTime(json.getOffsetDateTime("scheduled_end_time", null))
-                .setImage(json.getString("image", null));
+                .setCoverImage(json.getString("image", null));
 
         long creatorId = json.getLong("creator_id", 0);
         scheduledEvent.setCreatorId(creatorId);

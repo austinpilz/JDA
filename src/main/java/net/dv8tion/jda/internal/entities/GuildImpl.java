@@ -16,7 +16,9 @@
 
 package net.dv8tion.jda.internal.entities;
 
+import gnu.trove.map.TLongIntMap;
 import gnu.trove.map.TLongObjectMap;
+import gnu.trove.map.hash.TLongIntHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.TLongSet;
 import net.dv8tion.jda.api.Permission;
@@ -79,10 +81,7 @@ import net.dv8tion.jda.internal.requests.restaction.order.ChannelOrderActionImpl
 import net.dv8tion.jda.internal.requests.restaction.order.RoleOrderActionImpl;
 import net.dv8tion.jda.internal.requests.restaction.pagination.AuditLogPaginationActionImpl;
 import net.dv8tion.jda.internal.requests.restaction.pagination.BanPaginationActionImpl;
-import net.dv8tion.jda.internal.utils.Checks;
-import net.dv8tion.jda.internal.utils.EntityString;
-import net.dv8tion.jda.internal.utils.Helpers;
-import net.dv8tion.jda.internal.utils.UnlockHook;
+import net.dv8tion.jda.internal.utils.*;
 import net.dv8tion.jda.internal.utils.cache.*;
 import net.dv8tion.jda.internal.utils.concurrent.task.GatewayTask;
 import okhttp3.MediaType;
@@ -615,7 +614,11 @@ public class GuildImpl implements Guild {
             @Nonnull String location,
             @Nonnull OffsetDateTime startTime,
             @Nonnull OffsetDateTime endTime) {
-        checkPermission(Permission.MANAGE_EVENTS);
+        PermissionUtil.checkWithDeadline(
+                getSelfMember(),
+                PermissionUtil.FEB_23_2026_DEADLINE,
+                /* old */ Permission.MANAGE_EVENTS,
+                /* new */ Permission.CREATE_SCHEDULED_EVENTS);
         return new ScheduledEventActionImpl(name, location, startTime, endTime, this);
     }
 
@@ -623,7 +626,11 @@ public class GuildImpl implements Guild {
     @Override
     public ScheduledEventAction createScheduledEvent(
             @Nonnull String name, @Nonnull GuildChannel channel, @Nonnull OffsetDateTime startTime) {
-        checkPermission(Permission.MANAGE_EVENTS);
+        PermissionUtil.checkWithDeadline(
+                getSelfMember(),
+                PermissionUtil.FEB_23_2026_DEADLINE,
+                /* old */ Permission.MANAGE_EVENTS,
+                /* new */ Permission.CREATE_SCHEDULED_EVENTS);
         return new ScheduledEventActionImpl(name, channel, startTime, this);
     }
 
@@ -1741,6 +1748,18 @@ public class GuildImpl implements Guild {
 
     @Nonnull
     @Override
+    public RestAction<RoleMemberCounts> retrieveRoleMemberCounts() {
+        return new RestActionImpl<>(api, Route.Guilds.GET_ROLE_MEMBER_COUNTS.compile(getId()), (response, request) -> {
+            TLongIntMap map = new TLongIntHashMap();
+            response.getObject()
+                    .toMap()
+                    .forEach((roleId, count) -> map.put(Long.parseUnsignedLong(roleId), (int) count));
+            return new RoleMemberCountsImpl(this, map);
+        });
+    }
+
+    @Nonnull
+    @Override
     public ChannelAction<TextChannel> createTextChannel(@Nonnull String name, Category parent) {
         return createChannel(ChannelType.TEXT, TextChannel.class, name, parent);
     }
@@ -1802,7 +1821,11 @@ public class GuildImpl implements Guild {
     @Override
     public AuditableRestAction<RichCustomEmoji> createEmoji(
             @Nonnull String name, @Nonnull Icon icon, @Nonnull Role... roles) {
-        checkPermission(Permission.MANAGE_GUILD_EXPRESSIONS);
+        PermissionUtil.checkWithDeadline(
+                getSelfMember(),
+                PermissionUtil.FEB_23_2026_DEADLINE,
+                /* old */ Permission.MANAGE_GUILD_EXPRESSIONS,
+                /* new */ Permission.CREATE_GUILD_EXPRESSIONS);
         Checks.inRange(name, 2, CustomEmoji.EMOJI_NAME_MAX_LENGTH, "Emoji name");
         Checks.notNull(icon, "Emoji icon");
         Checks.notNull(roles, "Roles");
@@ -1836,7 +1859,11 @@ public class GuildImpl implements Guild {
             @Nonnull String description,
             @Nonnull FileUpload file,
             @Nonnull Collection<String> tags) {
-        checkPermission(Permission.MANAGE_GUILD_EXPRESSIONS);
+        PermissionUtil.checkWithDeadline(
+                getSelfMember(),
+                PermissionUtil.FEB_23_2026_DEADLINE,
+                /* old */ Permission.MANAGE_GUILD_EXPRESSIONS,
+                /* new */ Permission.CREATE_GUILD_EXPRESSIONS);
         Checks.inRange(name, 2, 30, "Name");
         Checks.notNull(file, "File");
         Checks.notNull(description, "Description");

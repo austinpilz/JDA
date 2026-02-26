@@ -59,9 +59,8 @@ import net.dv8tion.jda.api.requests.restaction.order.RoleOrderAction;
 import net.dv8tion.jda.api.requests.restaction.pagination.AuditLogPaginationAction;
 import net.dv8tion.jda.api.requests.restaction.pagination.BanPaginationAction;
 import net.dv8tion.jda.api.requests.restaction.pagination.PaginationAction;
-import net.dv8tion.jda.api.utils.FileUpload;
-import net.dv8tion.jda.api.utils.ImageProxy;
-import net.dv8tion.jda.api.utils.MiscUtil;
+import net.dv8tion.jda.api.utils.*;
+import net.dv8tion.jda.api.utils.DiscordAssets;
 import net.dv8tion.jda.api.utils.cache.*;
 import net.dv8tion.jda.api.utils.concurrent.Task;
 import net.dv8tion.jda.internal.interactions.CommandDataImpl;
@@ -96,11 +95,26 @@ import javax.annotation.Nullable;
  * @see JDA#getGuilds()
  */
 public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake, IDetachableEntity {
-    /** Template for {@link #getIconUrl()}. */
+    /**
+     * Template for {@link #getIconUrl()}.
+     *
+     * @deprecated Replaced by {@link DiscordAssets#guildIcon(ImageFormat, String, String)}
+     */
+    @Deprecated
     String ICON_URL = "https://cdn.discordapp.com/icons/%s/%s.%s";
-    /** Template for {@link #getSplashUrl()}. */
+    /**
+     * Template for {@link #getSplashUrl()}.
+     *
+     * @deprecated Replaced by {@link DiscordAssets#guildSplash(ImageFormat, String, String)}
+     */
+    @Deprecated
     String SPLASH_URL = "https://cdn.discordapp.com/splashes/%s/%s.png";
-    /** Template for {@link #getBannerUrl()}. */
+    /**
+     * Template for {@link #getBannerUrl()}.
+     *
+     * @deprecated Replaced by {@link DiscordAssets#guildBanner(ImageFormat, String, String)}
+     */
+    @Deprecated
     String BANNER_URL = "https://cdn.discordapp.com/banners/%s/%s.%s";
 
     /**
@@ -742,9 +756,31 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     @Nullable
     default String getIconUrl() {
         String iconId = getIconId();
-        return iconId == null
-                ? null
-                : String.format(ICON_URL, getId(), iconId, iconId.startsWith("a_") ? "gif" : "png");
+        return iconId == null ? null : getIconUrl(iconId.startsWith("a_") ? ImageFormat.GIF : ImageFormat.PNG);
+    }
+
+    /**
+     * The URL of the {@link net.dv8tion.jda.api.entities.Guild Guild} icon image.
+     * If no icon has been set, this returns {@code null}.
+     * <p>
+     * The Guild icon can be modified using {@link GuildManager#setIcon(Icon)}.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
+     *         If this entity is {@link #isDetached() detached}
+     *
+     * @return Possibly-null String containing the Guild's icon URL.
+     *
+     * @see    DiscordAssets#guildIcon(ImageFormat, String, String)
+     */
+    @Nullable
+    default String getIconUrl(@Nonnull ImageFormat format) {
+        ImageProxy icon = getIcon(format);
+        return icon == null ? null : icon.getUrl();
     }
 
     /**
@@ -761,6 +797,28 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     default ImageProxy getIcon() {
         String iconUrl = getIconUrl();
         return iconUrl == null ? null : new ImageProxy(iconUrl);
+    }
+
+    /**
+     * Returns an {@link ImageProxy} for this guild's icon.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
+     *         If this entity is {@link #isDetached() detached}
+     *
+     * @return The {@link ImageProxy} of this guild's icon
+     *
+     * @see    #getIconUrl(ImageFormat)
+     * @see    DiscordAssets#guildIcon(ImageFormat, String, String)
+     */
+    @Nullable
+    default ImageProxy getIcon(@Nonnull ImageFormat format) {
+        String iconId = getIconId();
+        return iconId == null ? null : DiscordAssets.guildIcon(format, getId(), iconId);
     }
 
     /**
@@ -818,7 +876,33 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     @Nullable
     default String getSplashUrl() {
         String splashId = getSplashId();
-        return splashId == null ? null : String.format(SPLASH_URL, getId(), splashId);
+        return splashId == null ? null : getSplashUrl(ImageFormat.PNG);
+    }
+
+    /**
+     * The URL of the splash image for this Guild. A Splash image is an image displayed when viewing a
+     * Discord Guild Invite on the web or in client just before accepting or declining the invite.
+     * If no splash has been set, this returns {@code null}.
+     * <br>Splash images are VIP/Partner Guild only.
+     * <p>
+     * The Guild splash can be modified using {@link GuildManager#setSplash(Icon)}.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
+     *         If this entity is {@link #isDetached() detached}
+     *
+     * @return Possibly-null String containing the Guild's splash URL.
+     *
+     * @see    DiscordAssets#guildSplash(ImageFormat, String, String)
+     */
+    @Nullable
+    default String getSplashUrl(@Nonnull ImageFormat format) {
+        ImageProxy splash = getSplash(format);
+        return splash == null ? null : splash.getUrl();
     }
 
     /**
@@ -835,6 +919,27 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     default ImageProxy getSplash() {
         String splashUrl = getSplashUrl();
         return splashUrl == null ? null : new ImageProxy(splashUrl);
+    }
+
+    /**
+     * Returns an {@link ImageProxy} for this guild's splash icon.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
+     *         If this entity is {@link #isDetached() detached}
+     *
+     * @return Possibly-null {@link ImageProxy} of this guild's splash icon
+     *
+     * @see    #getSplashUrl(ImageFormat)
+     * @see    DiscordAssets#guildSplash(ImageFormat, String, String)
+     */
+    @Nullable
+    default ImageProxy getSplash(@Nonnull ImageFormat format) {
+        return DiscordAssets.guildSplash(format, getId(), getSplashId());
     }
 
     /**
@@ -930,7 +1035,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
      *
      * @return The guild banner id or null
      *
-     * @see    #getBannerUrl()
+     * @see    #getBannerUrl(ImageFormat)
      */
     @Nullable
     String getBannerId();
@@ -949,9 +1054,31 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     @Nullable
     default String getBannerUrl() {
         String bannerId = getBannerId();
-        return bannerId == null
-                ? null
-                : String.format(BANNER_URL, getId(), bannerId, bannerId.startsWith("a_") ? "gif" : "png");
+        return bannerId == null ? null : getBannerUrl(bannerId.startsWith("a_") ? ImageFormat.GIF : ImageFormat.PNG);
+    }
+
+    /**
+     * The guild banner url.
+     * <br>This is shown in guilds below the guild name.
+     *
+     * <p>The banner can be modified using {@link GuildManager#setBanner(Icon)}.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
+     *         If this entity is {@link #isDetached() detached}
+     *
+     * @return The guild banner url or null
+     *
+     * @see    DiscordAssets#guildBanner(ImageFormat, String, String)
+     */
+    @Nullable
+    default String getBannerUrl(@Nonnull ImageFormat format) {
+        ImageProxy banner = getBanner(format);
+        return banner == null ? null : banner.getUrl();
     }
 
     /**
@@ -968,6 +1095,27 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     default ImageProxy getBanner() {
         String bannerUrl = getBannerUrl();
         return bannerUrl == null ? null : new ImageProxy(bannerUrl);
+    }
+
+    /**
+     * Returns an {@link ImageProxy} for this guild's banner image.
+     *
+     * @param  format
+     *         The format in which the image should be
+     *
+     * @throws IllegalArgumentException
+     *         If the format is {@code null}
+     * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
+     *         If this entity is {@link #isDetached() detached}
+     *
+     * @return Possibly-null {@link ImageProxy} of this guild's banner image
+     *
+     * @see    #getBannerUrl(ImageFormat)
+     * @see    DiscordAssets#guildBanner(ImageFormat, String, String)
+     */
+    @Nullable
+    default ImageProxy getBanner(@Nonnull ImageFormat format) {
+        return DiscordAssets.guildBanner(format, getId(), getBannerId());
     }
 
     /**
@@ -4759,6 +4907,19 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     AuditableRestAction<Void> modifyMemberRoles(@Nonnull Member member, @Nonnull Collection<Role> roles);
 
     /**
+     * Returns a {@link RoleMemberCounts} object with the member count of each role,
+     * except for the {@linkplain #getPublicRole() @everyone} role.
+     *
+     * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
+     *         If this entity is {@link #isDetached() detached}
+     *
+     * @return A {@link RoleMemberCounts} object
+     */
+    @Nonnull
+    @CheckReturnValue
+    RestAction<RoleMemberCounts> retrieveRoleMemberCounts();
+
+    /**
      * Creates a new {@link TextChannel TextChannel} in this Guild.
      * For this to be successful, the logged in account has to have the {@link net.dv8tion.jda.api.Permission#MANAGE_CHANNEL MANAGE_CHANNEL} Permission
      *
@@ -5311,7 +5472,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     /**
      * Creates a new {@link RichCustomEmoji} in this Guild.
      * <br>If one or more Roles are specified the new emoji will only be available to Members with any of the specified Roles (see {@link Member#canInteract(RichCustomEmoji)})
-     * <br>For this to be successful, the logged in account has to have the {@link net.dv8tion.jda.api.Permission#MANAGE_GUILD_EXPRESSIONS MANAGE_GUILD_EXPRESSIONS} Permission.
+     * <br>For this to be successful, the logged in account has to have the {@link net.dv8tion.jda.api.Permission#CREATE_GUILD_EXPRESSIONS CREATE_GUILD_EXPRESSIONS} Permission.
      *
      * <p><b><u>Unicode emojis are not included as {@link RichCustomEmoji}!</u></b>
      *
@@ -5336,7 +5497,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
      *         <br>If no roles are provided the emoji will be available to all Members of this Guild
      *
      * @throws net.dv8tion.jda.api.exceptions.InsufficientPermissionException
-     *         If the logged in account does not have the {@link net.dv8tion.jda.api.Permission#MANAGE_GUILD_EXPRESSIONS MANAGE_GUILD_EXPRESSIONS} Permission
+     *         If the logged in account does not have the {@link net.dv8tion.jda.api.Permission#CREATE_GUILD_EXPRESSIONS CREATE_GUILD_EXPRESSIONS} Permission
      * @throws net.dv8tion.jda.api.exceptions.DetachedEntityException
      *         If this entity is {@link #isDetached() detached}
      *
@@ -5367,7 +5528,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
      *         The tags to use for auto-suggestions (Up to 200 characters in total)
      *
      * @throws InsufficientPermissionException
-     *         If the currently logged in account does not have the {@link net.dv8tion.jda.api.Permission#MANAGE_GUILD_EXPRESSIONS MANAGE_GUILD_EXPRESSIONS} permission
+     *         If the currently logged in account does not have the {@link net.dv8tion.jda.api.Permission#CREATE_GUILD_EXPRESSIONS CREATE_GUILD_EXPRESSIONS} permission
      * @throws IllegalArgumentException
      *         <ul>
      *             <li>If the name is not between 2 and 30 characters long</li>
@@ -5411,7 +5572,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
      *         Additional tags to use for suggestions
      *
      * @throws InsufficientPermissionException
-     *         If the currently logged in account does not have the {@link net.dv8tion.jda.api.Permission#MANAGE_GUILD_EXPRESSIONS MANAGE_GUILD_EXPRESSIONS} permission
+     *         If the currently logged in account does not have the {@link net.dv8tion.jda.api.Permission#CREATE_GUILD_EXPRESSIONS CREATE_GUILD_EXPRESSIONS} permission
      * @throws IllegalArgumentException
      *         <ul>
      *             <li>If the name is not between 2 and 30 characters long</li>
@@ -5469,7 +5630,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
      *
      * Events are required to have a name, location and start time.
      * Additionally, an end time <em>must</em> also be specified for events of {@link ScheduledEvent.Type#EXTERNAL Type.EXTERNAL}.
-     * {@link Permission#MANAGE_EVENTS} is required on the guild level in order to create this type of event.
+     * {@link Permission#CREATE_SCHEDULED_EVENTS} is required on the guild level in order to create this type of event.
      *
      * <p><b>Example</b><br>
      * {@snippet lang="java":
@@ -5522,7 +5683,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
      *         <br>These events are set to take place inside of a {@link StageChannel}. The
      *         following permissions are required in the specified stage channel in order to create an event there:
      *          <ul>
-     *              <li>{@link Permission#MANAGE_EVENTS}</li>
+     *              <li>{@link Permission#CREATE_SCHEDULED_EVENTS}</li>
      *              <li>{@link Permission#MANAGE_CHANNEL}</li>
      *              <li>{@link Permission#VOICE_MUTE_OTHERS}</li>
      *              <li>{@link Permission#VOICE_MOVE_OTHERS}}</li>
@@ -5533,7 +5694,7 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
      *         <br>These events are set to take place inside of a {@link VoiceChannel}. The
      *         following permissions are required in the specified voice channel in order to create an event there:
      *         <ul>
-     *             <li>{@link Permission#MANAGE_EVENTS}</li>
+     *             <li>{@link Permission#CREATE_SCHEDULED_EVENTS}</li>
      *             <li>{@link Permission#VIEW_CHANNEL}</li>
      *             <li>{@link Permission#VOICE_CONNECT}</li>
      *         </ul>
@@ -5798,8 +5959,6 @@ public interface Guild extends IGuildChannelContainer<GuildChannel>, ISnowflake,
     @Nonnull
     @CheckReturnValue
     GuildWelcomeScreenManager modifyWelcomeScreen();
-
-    //////////////////////////
 
     /**
      * Represents the idle time allowed until a user is moved to the

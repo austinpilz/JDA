@@ -63,6 +63,7 @@ public class Route {
                 new Route(PATCH, "applications/{application_id}/emojis/{emoji_id}");
         public static final Route DELETE_APPLICATION_EMOJI =
                 new Route(DELETE, "applications/{application_id}/emojis/{emoji_id}");
+        public static final Route GET_SKUS = new Route(GET, "applications/{application_id}/skus");
     }
 
     public static class Interactions {
@@ -130,6 +131,7 @@ public class Route {
         public static final Route GET_CHANNELS = new Route(GET, "guilds/{guild_id}/channels");
         public static final Route MODIFY_CHANNELS = new Route(PATCH, "guilds/{guild_id}/channels");
         public static final Route MODIFY_ROLES = new Route(PATCH, "guilds/{guild_id}/roles");
+        public static final Route GET_ROLE_MEMBER_COUNTS = new Route(GET, "guilds/{guild_id}/roles/member-counts");
         public static final Route GET_BANS = new Route(GET, "guilds/{guild_id}/bans");
         public static final Route GET_BAN = new Route(GET, "guilds/{guild_id}/bans/{user_id}");
         public static final Route UNBAN = new Route(DELETE, "guilds/{guild_id}/bans/{user_id}");
